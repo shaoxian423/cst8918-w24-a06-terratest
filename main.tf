@@ -78,6 +78,8 @@ resource "azurerm_network_interface" "webserver" {
 resource "azurerm_network_interface_security_group_association" "webserver" {
   network_interface_id      = azurerm_network_interface.webserver.id
   network_security_group_id = azurerm_network_security_group.webserver.id
+
+  depends_on = [azurerm_linux_virtual_machine.webserver] # Prevent destroy error: ensure VM is destroyed before detaching NSG
 }
 
 # Define the init script template
