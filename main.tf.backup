@@ -1,42 +1,39 @@
-# Create an Azure resource group
+# Define the resource group
 resource "azurerm_resource_group" "rg" {
   name     = "${var.labelPrefix}-A05-RG"
   location = var.region
 }
 
-# Create a public IP address
+# Define a public IP address
 resource "azurerm_public_ip" "webserver" {
   name                = "${var.labelPrefix}A05PublicIP"
   location            = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name
   allocation_method   = "Dynamic"
-  depends_on          = [azurerm_resource_group.rg]
 }
 
-# Create a virtual network
+# Define the virtual network
 resource "azurerm_virtual_network" "vnet" {
   name                = "${var.labelPrefix}A05Vnet"
   address_space       = ["10.0.0.0/16"]
   location            = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name
-  depends_on          = [azurerm_resource_group.rg]
 }
 
-# Create a subnet within the virtual network
+
+# Define the subnet
 resource "azurerm_subnet" "webserver" {
   name                 = "${var.labelPrefix}A05Subnet"
   resource_group_name  = azurerm_resource_group.rg.name
   virtual_network_name = azurerm_virtual_network.vnet.name
   address_prefixes     = ["10.0.1.0/24"]
-  depends_on           = [azurerm_virtual_network.vnet]
 }
 
-# Create a network security group with SSH and HTTP rules
+# Define network security group and rules
 resource "azurerm_network_security_group" "webserver" {
-  name                = "${var.labelPrefix}A05SG"
+  name                = "${var.labelPrefix}A05SG" # mckennrA05SG
   location            = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name
-  depends_on          = [azurerm_resource_group.rg]
 
   security_rule {
     name                       = "SSH"
@@ -63,12 +60,11 @@ resource "azurerm_network_security_group" "webserver" {
   }
 }
 
-# Create a network interface
+# Define the network interface
 resource "azurerm_network_interface" "webserver" {
   name                = "${var.labelPrefix}A05Nic"
   location            = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name
-  depends_on          = [azurerm_subnet.webserver, azurerm_public_ip.webserver]
 
   ip_configuration {
     name                          = "${var.labelPrefix}A05NicConfig"
@@ -78,14 +74,15 @@ resource "azurerm_network_interface" "webserver" {
   }
 }
 
-# Associate the network security group with the NIC
+# Link the security group to the NIC
 resource "azurerm_network_interface_security_group_association" "webserver" {
   network_interface_id      = azurerm_network_interface.webserver.id
   network_security_group_id = azurerm_network_security_group.webserver.id
-  depends_on                = [azurerm_linux_virtual_machine.webserver] # Prevent destroy error: ensure VM is destroyed before detaching NSG
+
+  depends_on = [azurerm_linux_virtual_machine.webserver] # Prevent destroy error: ensure VM is destroyed before detaching NSG
 }
 
-# Configure cloud-init script for VM initialization
+# Define the init script template
 data "cloudinit_config" "init" {
   gzip          = false
   base64_encode = true
@@ -93,18 +90,18 @@ data "cloudinit_config" "init" {
   part {
     filename     = "init.sh"
     content_type = "text/x-shellscript"
-    content      = file("${path.module}/init.sh")
+
+    content = file("${path.module}/init.sh")
   }
 }
 
-# Create a Linux virtual machine
+# Define the virtual machine
 resource "azurerm_linux_virtual_machine" "webserver" {
   name                  = "${var.labelPrefix}A05VM"
   resource_group_name   = azurerm_resource_group.rg.name
   location              = azurerm_resource_group.rg.location
   network_interface_ids = [azurerm_network_interface.webserver.id]
   size                  = "Standard_B1s"
-  depends_on            = [azurerm_network_interface.webserver]
 
   os_disk {
     name                 = "${var.labelPrefix}A05OSDisk"
@@ -129,17 +126,4 @@ resource "azurerm_linux_virtual_machine" "webserver" {
   }
 
   custom_data = data.cloudinit_config.init.rendered
-}
-
-# Define Terraform outputs for testing
-output "vm_name" {
-  value = azurerm_linux_virtual_machine.webserver.name
-}
-
-output "resource_group_name" {
-  value = azurerm_resource_group.rg.name
-}
-
-output "nic_name" {
-  value = azurerm_network_interface.webserver.name
 }
