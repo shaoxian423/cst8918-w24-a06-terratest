@@ -130,16 +130,3 @@ resource "azurerm_linux_virtual_machine" "webserver" {
 
   custom_data = data.cloudinit_config.init.rendered
 }
-
-# Define Terraform outputs for testing
-output "vm_name" {
-  value = azurerm_linux_virtual_machine.webserver.name
-}
-
-output "resource_group_name" {
-  value = azurerm_resource_group.rg.name
-}
-
-output "nic_name" {
-  value = azurerm_network_interface.webserver.name
-}

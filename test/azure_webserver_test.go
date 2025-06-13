@@ -50,15 +50,14 @@ func TestAzureLinuxVMCreation(t *testing.T) {
 	assert.True(t, azure.VirtualMachineExists(t, vmName, resourceGroupName, subscriptionID), "VM should exist")
 
 	// Test 2: Confirm NIC exists and is connected to the VM
-	nic, err := azure.GetNetworkInterface(t, subscriptionID, resourceGroupName, nicName)
+	nic, err := azure.GetNetworkInterfaceE(nicName, resourceGroupName, subscriptionID)
 	assert.NoError(t, err, "Failed to get NIC")
 	assert.NotNil(t, nic, "NIC should exist")
 	assert.NotNil(t, nic.VirtualMachine, "NIC should be attached to a VM")
 	assert.Contains(t, *nic.VirtualMachine.ID, vmName, "NIC should be attached to the correct VM")
 
 	// Test 3: Confirm VM is running Ubuntu 22.04 LTS
-	vm, err := azure.GetVirtualMachine(t, subscriptionID, resourceGroupName, vmName)
-	assert.NoError(t, err, "Failed to get VM")
+	vm := azure.GetVirtualMachine(t, subscriptionID, resourceGroupName, vmName)
 	assert.NotNil(t, vm, "VM should exist")
 	assert.Equal(t, "Canonical", *vm.StorageProfile.ImageReference.Publisher, "VM should use Canonical image")
 	assert.Equal(t, "0001-com-ubuntu-server-jammy", *vm.StorageProfile.ImageReference.Offer, "VM should use Ubuntu Jammy offer")
