@@ -1,10 +1,7 @@
-CST8918 - DevOps: Infrastructure as Code  
-Prof: Robert McKenney
-
-# LAB-A05 Terraform Web Server
+# Terraform Web Server
 
 ## Background
-This hands-on lab activity will explore using Terraform to deploy a simple web server on Azure.
+Using Terraform to deploy a simple web server on Azure.
 
 ### Prerequisites
 You will need the following tools installed locally on your laptop before you begin.
